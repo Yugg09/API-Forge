@@ -2,21 +2,40 @@
 
 import { useState } from "react";
 
-type RequestPanelProps = {
+type RequestPanelProps = { // Define the props for the RequestPanel component
     setResponse: React.Dispatch<React.SetStateAction<string>>;
+    setStatus: React.Dispatch<React.SetStateAction<number>>;
+    setTime: React.Dispatch<React.SetStateAction<number>>;
+    setSize: React.Dispatch<React.SetStateAction<number>>;
   };
   
-  export default function RequestPanel({
+  export default function RequestPanel({ 
     setResponse,
+    setStatus,
+    setTime,
+    setSize,
   }: RequestPanelProps) {
   const [url, setUrl] = useState("");
+  const [method, setMethod] = useState("GET");
 
-  async function sendRequest() {
+  async function sendRequest() { // Define an asynchronous function to send the API request
     try {
-      const res = await fetch(url);
-      const data = await res.json();
+      const startTime = performance.now();
   
-      setResponse(JSON.stringify(data, null, 2));
+      const res = await fetch(url, {
+        method,
+      });// Send a GET request to the specified URL and wait for the response
+  
+      const endTime = performance.now();
+  
+      const data = await res.json();
+      const formattedData = JSON.stringify(data, null, 2); 
+  
+      setResponse(formattedData);
+      setStatus(res.status);
+      setTime(Math.round(endTime - startTime));
+      setSize(new Blob([formattedData]).size);
+  
     } catch (error) {
       setResponse("Request Failed");
     }
@@ -30,7 +49,12 @@ type RequestPanelProps = {
 
       {/* Method + URL + Send */}
       <div className="flex gap-3">
-        <select className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2">
+      
+      <select
+        value={method}
+         onChange={(e) => setMethod(e.target.value)}
+         className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2"
+        >
           <option>GET</option>
           <option>POST</option>
           <option>PUT</option>
