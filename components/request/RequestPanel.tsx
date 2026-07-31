@@ -17,15 +17,30 @@ type RequestPanelProps = { // Define the props for the RequestPanel component
   }: RequestPanelProps) {
   const [url, setUrl] = useState("");
   const [method, setMethod] = useState("GET");
+  const [body, setBody] = useState(""); // Define state variables for the URL, HTTP method, and request body
 
   async function sendRequest() { // Define an asynchronous function to send the API request
+   
+    if (method !== "GET" && body.trim()) {
+        try {
+          JSON.parse(body);
+        } catch {
+          setResponse("Invalid JSON");
+          return;
+        }
+      }
+   
     try {
       const startTime = performance.now();
   
-      const res = await fetch(url, {
+      const res = await fetch(url, { // Use the fetch API to send the request to the specified URL with the selected HTTP method and request body
         method,
-      });// Send a GET request to the specified URL and wait for the response
-  
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: method === "GET" ? undefined : body,
+      });
+
       const endTime = performance.now();
   
       const data = await res.json();
@@ -83,6 +98,15 @@ type RequestPanelProps = { // Define the props for the RequestPanel component
         <button>Body</button>
         <button>Auth</button>
       </div>
+
+      <textarea
+         value={body}
+         onChange={(e) => setBody(e.target.value)}
+         placeholder='{
+        "name": "Yug"
+           }'
+         className="mt-4 h-64 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-4 font-mono outline-none"
+         />
     </div>
   );
 }
