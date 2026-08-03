@@ -2,56 +2,161 @@
 
 import { useState } from "react";
 
-type RequestPanelProps = { // Define the props for the RequestPanel component
-    setResponse: React.Dispatch<React.SetStateAction<string>>;
-    setStatus: React.Dispatch<React.SetStateAction<number>>;
-    setTime: React.Dispatch<React.SetStateAction<number>>;
-    setSize: React.Dispatch<React.SetStateAction<number>>;
-  };
-  
-  export default function RequestPanel({ 
-    setResponse,
-    setStatus,
-    setTime,
-    setSize,
-  }: RequestPanelProps) {
+import BodyEditor from "../request-builder/BodyEditor";
+import HeaderEditor from "../request-builder/HeaderEditor";
+import RequestTabs from "../request-builder/RequestTabs";
+import RequestToolbar from "../request-builder/RequestToolbar";
+
+type Header = {
+  key: string;
+  value: string;
+};
+
+type RequestPanelProps = {
+  setResponse: React.Dispatch<React.SetStateAction<string>>;
+  setStatus: React.Dispatch<React.SetStateAction<number>>;
+  setTime: React.Dispatch<React.SetStateAction<number>>;
+  setSize: React.Dispatch<React.SetStateAction<number>>;
+};
+
+const INITIAL_HEADER: Header = {
+  key: "",
+  value: "",
+};
+
+export default function RequestPanel({
+  setResponse,
+  setStatus,
+  setTime,
+  setSize,
+}: RequestPanelProps) {
+  // Request State
   const [url, setUrl] = useState("");
   const [method, setMethod] = useState("GET");
-  const [body, setBody] = useState(""); // Define state variables for the URL, HTTP method, and request body
+  const [body, setBody] = useState("");
 
-  async function sendRequest() { // Define an asynchronous function to send the API request
-   
-    if (method !== "GET" && body.trim()) {
-        try {
-          JSON.parse(body);
-        } catch {
-          setResponse("Invalid JSON");
-          return;
+  // Headers State
+  const [headers, setHeaders] = useState<Header[]>([
+    INITIAL_HEADER,
+  ]);
+
+  // UI State
+  const [activeTab, setActiveTab] =
+    useState("Headers");
+
+  function updateHeader(
+    index: number,
+    field: "key" | "value",
+    value: string
+  ) {
+    const updatedHeaders = [...headers];
+
+    updatedHeaders[index][field] = value;
+
+    setHeaders(updatedHeaders);
+  }
+
+  function addHeader() {
+    setHeaders([
+      ...headers,
+      INITIAL_HEADER,
+    ]);
+  }
+
+  function removeHeader(index: number) {
+    if (headers.length === 1) {
+      setHeaders([INITIAL_HEADER]);
+      return;
+    }
+
+    setHeaders(
+      headers.filter(
+        (_, i) => i !== index
+      )
+    );
+  }
+
+  function validateBody() {
+    if (method === "GET") return true;
+
+    if (!body.trim()) return true;
+
+    try {
+      JSON.parse(body);
+      return true;
+    } catch {
+      setResponse("Invalid JSON");
+      return false;
+    }
+  }
+
+  function buildHeaders() {
+    const requestHeaders = headers.reduce(
+      (acc, header) => {
+        const key = header.key.trim();
+
+        if (key) {
+          acc[key] = header.value;
         }
-      }
-   
+
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+
+    const hasContentType =
+      Object.keys(requestHeaders).some(
+        (key) =>
+          key.toLowerCase() ===
+          "content-type"
+      );
+
+    return {
+      ...requestHeaders,
+
+      ...(!hasContentType &&
+      method !== "GET"
+        ? {
+            "Content-Type":
+              "application/json",
+          }
+        : {}),
+    };
+  }
+
+  async function sendRequest() {
+    if (!validateBody()) return;
+
+    const finalHeaders = buildHeaders();
+
     try {
       const startTime = performance.now();
-  
-      const res = await fetch(url, { // Use the fetch API to send the request to the specified URL with the selected HTTP method and request body
+
+      const res = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: finalHeaders,
         body: method === "GET" ? undefined : body,
       });
 
       const endTime = performance.now();
-  
+
       const data = await res.json();
-      const formattedData = JSON.stringify(data, null, 2); 
-  
+      const formattedData = JSON.stringify(
+        data,
+        null,
+        2
+      );
+
       setResponse(formattedData);
       setStatus(res.status);
-      setTime(Math.round(endTime - startTime));
-      setSize(new Blob([formattedData]).size);
-  
+      setTime(
+        Math.round(endTime - startTime)
+      );
+      setSize(
+        new Blob([formattedData]).size
+      );
     } catch (error) {
+      console.error(error);
       setResponse("Request Failed");
     }
   }
@@ -62,51 +167,34 @@ type RequestPanelProps = { // Define the props for the RequestPanel component
         Request Builder
       </h2>
 
-      {/* Method + URL + Send */}
-      <div className="flex gap-3">
-      
-      <select
-        value={method}
-         onChange={(e) => setMethod(e.target.value)}
-         className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2"
-        >
-          <option>GET</option>
-          <option>POST</option>
-          <option>PUT</option>
-          <option>DELETE</option>
-        </select>
+      <RequestToolbar
+        method={method}
+        url={url}
+        onMethodChange={setMethod}
+        onUrlChange={setUrl}
+        onSend={sendRequest}
+      />
 
-        <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 outline-none"
-          placeholder="https://api.example.com"
+      <RequestTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+
+      {activeTab === "Body" && (
+        <BodyEditor
+          body={body}
+          onBodyChange={setBody}
         />
+      )}
 
-        <button
-         onClick={sendRequest}
-          className="rounded-lg bg-blue-600 px-6 py-2 font-medium hover:bg-blue-700"
-        >
-          Send
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div className="mt-6 flex gap-6 border-b border-zinc-800 pb-3">
-        <button className="text-blue-500">Headers</button>
-        <button>Params</button>
-        <button>Body</button>
-        <button>Auth</button>
-      </div>
-
-      <textarea
-         value={body}
-         onChange={(e) => setBody(e.target.value)}
-         placeholder='{
-        "name": "Yug"
-           }'
-         className="mt-4 h-64 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-4 font-mono outline-none"
-         />
+      {activeTab === "Headers" && (
+        <HeaderEditor
+          headers={headers}
+          onHeaderChange={updateHeader}
+          onAddHeader={addHeader}
+          onRemoveHeader={removeHeader}
+        />
+      )}
     </div>
   );
 }
