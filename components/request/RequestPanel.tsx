@@ -6,10 +6,16 @@ import BodyEditor from "../request-builder/BodyEditor";
 import HeaderEditor from "../request-builder/HeaderEditor";
 import RequestTabs from "../request-builder/RequestTabs";
 import RequestToolbar from "../request-builder/RequestToolbar";
+import QueryEditor from "../request-builder/QueryEditor";
 
 type Header = {
   key: string;
   value: string;
+};
+
+type QueryParam = {
+    key: string;
+    value: string;
 };
 
 type RequestPanelProps = {
@@ -22,6 +28,11 @@ type RequestPanelProps = {
 const INITIAL_HEADER: Header = {
   key: "",
   value: "",
+};
+
+const INITIAL_QUERY_PARAM: QueryParam = {
+    key: "",
+    value: "",
 };
 
 export default function RequestPanel({
@@ -39,6 +50,41 @@ export default function RequestPanel({
   const [headers, setHeaders] = useState<Header[]>([
     INITIAL_HEADER,
   ]);
+
+  // Query Params State
+  const [queryParams, setQueryParams] = useState<QueryParam[]>([
+    INITIAL_QUERY_PARAM,
+  ]);
+
+  function updateQueryParam(
+    index: number,
+    field: "key" | "value",
+    value: string
+  ) {
+    const updatedQueryParams = [...queryParams];
+
+    updatedQueryParams[index][field] = value;
+
+    setQueryParams(updatedQueryParams);
+  }
+
+  function addQueryParam() {
+    setQueryParams([
+      ...queryParams,
+      INITIAL_QUERY_PARAM,
+    ]);
+  }
+
+  function removeQueryParam(index: number) {
+    if (queryParams.length === 1) {
+      setQueryParams([INITIAL_QUERY_PARAM]);
+      return;
+    }
+  
+    setQueryParams(
+      queryParams.filter((_, i) => i !== index)
+    );
+  }
 
   // UI State
   const [activeTab, setActiveTab] =
@@ -124,15 +170,37 @@ export default function RequestPanel({
     };
   }
 
+  function buildQueryParams() {
+    const params = new URLSearchParams();
+  
+    queryParams.forEach((param) => {
+      const key = param.key.trim();
+      const value = param.value.trim();
+  
+      if (key) {
+        params.append(key, value);
+      }
+    });
+  
+    return params;
+  }
+
   async function sendRequest() {
     if (!validateBody()) return;
 
     const finalHeaders = buildHeaders();
 
+    const finalQueryParams = buildQueryParams();
+    const queryString = finalQueryParams.toString();
+
+    const finalUrl = queryString
+  ? `${url}?${queryString}`
+  : url;
+
     try {
       const startTime = performance.now();
 
-      const res = await fetch(url, {
+      const res = await fetch(finalUrl, {
         method,
         headers: finalHeaders,
         body: method === "GET" ? undefined : body,
@@ -194,7 +262,16 @@ export default function RequestPanel({
           onAddHeader={addHeader}
           onRemoveHeader={removeHeader}
         />
-      )}
+    )}
+      {activeTab === "Params" && (
+      <QueryEditor
+        queryParams={queryParams}
+        onQueryParamChange={updateQueryParam}
+        onAddQueryParam={addQueryParam}
+        onRemoveQueryParam={removeQueryParam}
+      />
+    )}
+    
     </div>
   );
 }
