@@ -7,6 +7,7 @@ import HeaderEditor from "../request-builder/HeaderEditor";
 import RequestTabs from "../request-builder/RequestTabs";
 import RequestToolbar from "../request-builder/RequestToolbar";
 import QueryEditor from "../request-builder/QueryEditor";
+import PathVariableEditor from "../request-builder/PathVariableEditor";
 
 type Header = {
   key: string;
@@ -16,6 +17,11 @@ type Header = {
 type QueryParam = {
     key: string;
     value: string;
+};
+
+type PathVariable = {
+  key: string;
+  value: string;
 };
 
 type RequestPanelProps = {
@@ -33,6 +39,11 @@ const INITIAL_HEADER: Header = {
 const INITIAL_QUERY_PARAM: QueryParam = {
     key: "",
     value: "",
+};
+
+const INITIAL_PATH_VARIABLE: PathVariable = {
+  key: "",
+  value: "",
 };
 
 export default function RequestPanel({
@@ -55,6 +66,41 @@ export default function RequestPanel({
   const [queryParams, setQueryParams] = useState<QueryParam[]>([
     INITIAL_QUERY_PARAM,
   ]);
+
+  // Path Variables State
+  const [pathVariables, setPathVariables] = useState<PathVariable[]>([
+    INITIAL_PATH_VARIABLE,
+  ]);
+
+  function updatePathVariable(
+    index: number,
+    field: "key" | "value",
+    value: string
+  ) {
+    const updatedPathVariables = [...pathVariables];
+  
+    updatedPathVariables[index][field] = value;
+  
+    setPathVariables(updatedPathVariables);
+  }
+
+  function addPathVariable() {
+    setPathVariables([
+      ...pathVariables,
+      INITIAL_PATH_VARIABLE,
+    ]);
+  }
+
+  function removePathVariable(index: number) {
+    if (pathVariables.length === 1) {
+      setPathVariables([INITIAL_PATH_VARIABLE]);
+      return;
+    }
+  
+    setPathVariables(
+      pathVariables.filter((_, i) => i !== index)
+    );
+  }
 
   function updateQueryParam(
     index: number,
@@ -185,6 +231,24 @@ export default function RequestPanel({
     return params;
   }
 
+  function buildPathUrl() {
+    let finalPathUrl = url;
+  
+    pathVariables.forEach((variable) => {
+      const key = variable.key.trim();
+      const value = variable.value.trim();
+  
+      if (key) {
+        finalPathUrl = finalPathUrl.replace(
+          `:${key}`,
+          value
+        );
+      }
+    });
+  
+    return finalPathUrl;
+  }
+
   async function sendRequest() {
     if (!validateBody()) return;
 
@@ -193,13 +257,16 @@ export default function RequestPanel({
     const finalQueryParams = buildQueryParams();
     const queryString = finalQueryParams.toString();
 
+    const pathUrl = buildPathUrl();
+
     const finalUrl = queryString
-  ? `${url}?${queryString}`
-  : url;
+      ? `${pathUrl}?${queryString}`
+      : pathUrl;
 
     try {
       const startTime = performance.now();
 
+      console.log("Final URL:", finalUrl);
       const res = await fetch(finalUrl, {
         method,
         headers: finalHeaders,
@@ -271,7 +338,14 @@ export default function RequestPanel({
         onRemoveQueryParam={removeQueryParam}
       />
     )}
-    
+      {activeTab === "Path" && (
+    <PathVariableEditor
+      pathVariables={pathVariables}
+      onPathVariableChange={updatePathVariable}
+      onAddPathVariable={addPathVariable}
+      onRemovePathVariable={removePathVariable}
+    />
+  )}
     </div>
   );
 }

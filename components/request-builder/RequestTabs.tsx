@@ -5,7 +5,7 @@ type RequestTabsProps = {
   onTabChange: (tab: string) => void;
 };
 
-const tabs = ["Headers", "Params", "Body", "Auth"];
+const tabs = ["Headers", "Params", "Path", "Body", "Auth"];
 
 export default function RequestTabs({
   activeTab,
