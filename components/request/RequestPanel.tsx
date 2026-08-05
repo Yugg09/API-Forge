@@ -8,6 +8,7 @@ import RequestTabs from "../request-builder/RequestTabs";
 import RequestToolbar from "../request-builder/RequestToolbar";
 import QueryEditor from "../request-builder/QueryEditor";
 import PathVariableEditor from "../request-builder/PathVariableEditor";
+import AuthorizationEditor from "../request-builder/AuthorizationEditor";
 
 type Header = {
   key: string;
@@ -23,6 +24,12 @@ type PathVariable = {
   key: string;
   value: string;
 };
+
+type AuthType =
+  | "No Auth"
+  | "Bearer Token"
+  | "Basic Auth"
+  | "API Key";
 
 type RequestPanelProps = {
   setResponse: React.Dispatch<React.SetStateAction<string>>;
@@ -56,6 +63,18 @@ export default function RequestPanel({
   const [url, setUrl] = useState("");
   const [method, setMethod] = useState("GET");
   const [body, setBody] = useState("");
+  const [authType, setAuthType] =
+  useState<AuthType>("No Auth");
+  const [bearerToken, setBearerToken] = useState("");
+  //basic auth state
+  const [basicUsername, setBasicUsername] = useState("");
+  const [basicPassword, setBasicPassword] = useState("");
+  // API Key State
+const [apiKeyName, setApiKeyName] = useState("");
+const [apiKeyValue, setApiKeyValue] = useState("");
+const [apiKeyLocation, setApiKeyLocation] = useState<
+  "Header" | "Query"
+>("Header");
 
   // Headers State
   const [headers, setHeaders] = useState<Header[]>([
@@ -182,13 +201,13 @@ export default function RequestPanel({
     }
   }
 
-  function buildHeaders() {
+  function buildHeaders(): Record<string, string> {
     const requestHeaders = headers.reduce(
       (acc, header) => {
         const key = header.key.trim();
 
         if (key) {
-          acc[key] = header.value;
+          acc[key] = header.value || "";
         }
 
         return acc;
@@ -227,8 +246,60 @@ export default function RequestPanel({
         params.append(key, value);
       }
     });
+    if (
+      authType === "API Key" &&
+      apiKeyLocation === "Query" &&
+      apiKeyName.trim() &&
+      apiKeyValue.trim()
+    ) {
+      params.append(apiKeyName, apiKeyValue);
+    }
   
     return params;
+  }
+
+  function buildAuthorization(): Record<string, string> {
+    switch (authType) {
+      case "Bearer Token":
+        if (!bearerToken.trim()) {
+          return {};
+        }
+  
+        return {
+          Authorization: `Bearer ${bearerToken}`,
+        };
+  
+      case "No Auth":
+      default:
+        return {};
+
+        case "Basic Auth": {
+          if (!basicUsername.trim() || !basicPassword.trim()) {
+            return {};
+          }
+        
+          const credentials = `${basicUsername}:${basicPassword}`;
+        
+          const encodedCredentials = btoa(credentials);
+        
+          return {
+            Authorization: `Basic ${encodedCredentials}`,
+          };
+        }
+
+        case "API Key":
+          if (
+            apiKeyLocation !== "Header" ||
+            !apiKeyName.trim() ||
+            !apiKeyValue.trim()
+          ) {
+            return {};
+          }
+        
+          return {
+            [apiKeyName]: apiKeyValue,
+          };
+    }
   }
 
   function buildPathUrl() {
@@ -252,7 +323,15 @@ export default function RequestPanel({
   async function sendRequest() {
     if (!validateBody()) return;
 
-    const finalHeaders = buildHeaders();
+    if (authType === "Bearer Token" && !bearerToken.trim()) {
+      setResponse("Bearer token is required.");
+      return;
+  }
+
+    const finalHeaders: HeadersInit = {
+      ...buildHeaders(),
+      ...buildAuthorization(),
+    };
 
     const finalQueryParams = buildQueryParams();
     const queryString = finalQueryParams.toString();
@@ -346,6 +425,30 @@ export default function RequestPanel({
       onRemovePathVariable={removePathVariable}
     />
   )}
+      {activeTab === "Auth" && (
+  <AuthorizationEditor
+    authType={authType}
+    onAuthTypeChange={setAuthType}
+
+    bearerToken={bearerToken}
+    onBearerTokenChange={setBearerToken}
+
+    basicUsername={basicUsername}
+    onBasicUsernameChange={setBasicUsername}
+
+    basicPassword={basicPassword}
+    onBasicPasswordChange={setBasicPassword}
+
+    apiKeyName={apiKeyName}
+    onApiKeyNameChange={setApiKeyName}
+
+    apiKeyValue={apiKeyValue}
+    onApiKeyValueChange={setApiKeyValue}
+
+    apiKeyLocation={apiKeyLocation}
+    onApiKeyLocationChange={setApiKeyLocation}
+  />
+)}
     </div>
   );
 }
