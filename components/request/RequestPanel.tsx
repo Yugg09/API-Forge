@@ -9,6 +9,10 @@ import RequestToolbar from "../request-builder/RequestToolbar";
 import QueryEditor from "../request-builder/QueryEditor";
 import PathVariableEditor from "../request-builder/PathVariableEditor";
 import AuthorizationEditor from "../request-builder/AuthorizationEditor";
+import { buildHeaders } from "../utils/buildHeaders";
+import { buildQueryParams } from "../utils/buildQueryParams";
+import { buildPathUrl } from "../utils/buildPathUrl";
+import { buildAuthorization } from "../utils/buildAuthorization";
 
 type Header = {
   key: string;
@@ -201,125 +205,6 @@ const [apiKeyLocation, setApiKeyLocation] = useState<
     }
   }
 
-  function buildHeaders(): Record<string, string> {
-    const requestHeaders = headers.reduce(
-      (acc, header) => {
-        const key = header.key.trim();
-
-        if (key) {
-          acc[key] = header.value || "";
-        }
-
-        return acc;
-      },
-      {} as Record<string, string>
-    );
-
-    const hasContentType =
-      Object.keys(requestHeaders).some(
-        (key) =>
-          key.toLowerCase() ===
-          "content-type"
-      );
-
-    return {
-      ...requestHeaders,
-
-      ...(!hasContentType &&
-      method !== "GET"
-        ? {
-            "Content-Type":
-              "application/json",
-          }
-        : {}),
-    };
-  }
-
-  function buildQueryParams() {
-    const params = new URLSearchParams();
-  
-    queryParams.forEach((param) => {
-      const key = param.key.trim();
-      const value = param.value.trim();
-  
-      if (key) {
-        params.append(key, value);
-      }
-    });
-    if (
-      authType === "API Key" &&
-      apiKeyLocation === "Query" &&
-      apiKeyName.trim() &&
-      apiKeyValue.trim()
-    ) {
-      params.append(apiKeyName, apiKeyValue);
-    }
-  
-    return params;
-  }
-
-  function buildAuthorization(): Record<string, string> {
-    switch (authType) {
-      case "Bearer Token":
-        if (!bearerToken.trim()) {
-          return {};
-        }
-  
-        return {
-          Authorization: `Bearer ${bearerToken}`,
-        };
-  
-      case "No Auth":
-      default:
-        return {};
-
-        case "Basic Auth": {
-          if (!basicUsername.trim() || !basicPassword.trim()) {
-            return {};
-          }
-        
-          const credentials = `${basicUsername}:${basicPassword}`;
-        
-          const encodedCredentials = btoa(credentials);
-        
-          return {
-            Authorization: `Basic ${encodedCredentials}`,
-          };
-        }
-
-        case "API Key":
-          if (
-            apiKeyLocation !== "Header" ||
-            !apiKeyName.trim() ||
-            !apiKeyValue.trim()
-          ) {
-            return {};
-          }
-        
-          return {
-            [apiKeyName]: apiKeyValue,
-          };
-    }
-  }
-
-  function buildPathUrl() {
-    let finalPathUrl = url;
-  
-    pathVariables.forEach((variable) => {
-      const key = variable.key.trim();
-      const value = variable.value.trim();
-  
-      if (key) {
-        finalPathUrl = finalPathUrl.replace(
-          `:${key}`,
-          value
-        );
-      }
-    });
-  
-    return finalPathUrl;
-  }
-
   async function sendRequest() {
     if (!validateBody()) return;
 
@@ -328,15 +213,34 @@ const [apiKeyLocation, setApiKeyLocation] = useState<
       return;
   }
 
-    const finalHeaders: HeadersInit = {
-      ...buildHeaders(),
-      ...buildAuthorization(),
-    };
+  const finalHeaders: HeadersInit = {
+    ...buildHeaders(headers, method),
+  
+    ...buildAuthorization({
+      authType,
+      bearerToken,
+      basicUsername,
+      basicPassword,
+      apiKeyLocation,
+      apiKeyName,
+      apiKeyValue,
+    }),
+  };
 
-    const finalQueryParams = buildQueryParams();
+    const finalQueryParams = buildQueryParams(
+      queryParams,
+      authType,
+      apiKeyLocation,
+      apiKeyName,
+      apiKeyValue
+    );
+
     const queryString = finalQueryParams.toString();
 
-    const pathUrl = buildPathUrl();
+    const pathUrl = buildPathUrl(
+      url,
+      pathVariables
+    );
 
     const finalUrl = queryString
       ? `${pathUrl}?${queryString}`
