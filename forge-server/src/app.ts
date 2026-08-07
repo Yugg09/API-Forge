@@ -4,6 +4,8 @@ import cookieParser from "cookie-parser";
 
 import authRoutes from "./routes/auth.routes";
 import collectionRoutes from "./routes/collection.routes";
+import requestRoutes from "./routes/request.routes";
+import executeRoutes from "./routes/execute.routes";
 
 
 const app = express();
@@ -19,7 +21,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use("/api/auth", authRoutes);
 app.use("/api/collections", collectionRoutes);
+app.use("/api/requests", requestRoutes);
+app.use("/api/requests", executeRoutes);
 
 app.get("/health", (_, res) => {
   return res.status(200).json({
@@ -28,7 +33,7 @@ app.get("/health", (_, res) => {
   });
 });
 
-app.use("/api/auth", authRoutes);
+
 
 app.use((req,res) => {
   return res.status(404).json({
