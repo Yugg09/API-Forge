@@ -7,8 +7,10 @@ export function validate(schema: ZodTypeAny) {
     res: Response,
     next: NextFunction
   ) => {
-
+    
+    
     const result = schema.safeParse(req.body);
+  
     
 
     if (!result.success) {
