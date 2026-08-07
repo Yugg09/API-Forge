@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Request } from "../models/Request.model";
+import { saveHistory } from "./history.service";
 
 export async function executeRequest(
   requestId: string,
@@ -23,6 +24,13 @@ export async function executeRequest(
       ? JSON.parse(request.body)
       : undefined,
   });
+
+  await saveHistory(
+    userId,
+    requestId,
+    response.status,
+    response.data
+  );
 
   return {
     status: response.status,
