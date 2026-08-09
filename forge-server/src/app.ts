@@ -7,6 +7,7 @@ import collectionRoutes from "./routes/collection.routes";
 import requestRoutes from "./routes/request.routes";
 import executeRoutes from "./routes/execute.routes";
 import historyRoutes from "./routes/history.routes";
+import aiRoutes from "./routes/ai.routes";
 
 
 const app = express();
@@ -27,6 +28,9 @@ app.use("/api/collections", collectionRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/requests", executeRoutes);
 app.use("/api/history", historyRoutes);
+
+app.use("/api/ai", aiRoutes);
+
 
 app.get("/health", (_, res) => {
   return res.status(200).json({
