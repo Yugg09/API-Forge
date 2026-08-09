@@ -18,6 +18,17 @@ export const generateTestsSchema = z.object({
     url: z.string().url(),
     body: z.any().optional(),
   });
+
+  export const analyzeResponseSchema = z.object({
+    method: z.string().min(1),
+    url: z.string().url(),
+    status: z.number(),
+    requestBody: z.any().optional(),
+    response: z.any(),
+  });
+  
+  export type AnalyzeResponseInput =
+    z.infer<typeof analyzeResponseSchema>;
   
   export type GenerateTestsInput = z.infer<typeof generateTestsSchema>;
 

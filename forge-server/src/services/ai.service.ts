@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import {
   ExplainAPIInput,
   GenerateTestsInput,
+  AnalyzeResponseInput
 } from "../validators/ai.validator";
 
 const ai = new GoogleGenAI({
@@ -83,3 +84,54 @@ Return in markdown.
 
   return result.text;
 }
+
+export async function analyzeResponse(
+    data: AnalyzeResponseInput
+  ) {
+    const prompt = `
+  You are a Senior Backend Engineer.
+  
+  Analyze the following API response.
+  
+  Method:
+  ${data.method}
+  
+  URL:
+  ${data.url}
+  
+  Status Code:
+  ${data.status}
+  
+  Request Body:
+  ${JSON.stringify(data.requestBody, null, 2)}
+  
+  Response:
+  ${JSON.stringify(data.response, null, 2)}
+  
+  Generate a report with:
+  
+  # Overall Score (out of 10)
+  
+  # Strengths
+  
+  # Bugs
+  
+  # Security Issues
+  
+  # Performance Suggestions
+  
+  # REST API Best Practices
+  
+  # Improvements
+  
+  # Final Verdict
+  `;
+  
+    const result = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: prompt,
+    });
+  
+    return result.text;
+  }
+

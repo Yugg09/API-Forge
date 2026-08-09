@@ -4,11 +4,13 @@ import {
   testGemini,
   explainAPI as explainAPIService,
   generateTestCases,
+    analyzeResponse,
 } from "../services/ai.service";
 
 import {
   explainAPISchema,
   generateTestsSchema,
+    analyzeResponseSchema,
 } from "../validators/ai.validator";
 
 export async function testAI(req: Request, res: Response) {
@@ -62,3 +64,26 @@ export async function generateTests(req: Request, res: Response) {
     });
   }
 }
+
+export async function analyzeAPIResponse(
+    req: Request,
+    res: Response
+  ) {
+    try {
+      const validatedData =
+        analyzeResponseSchema.parse(req.body);
+  
+      const analysis =
+        await analyzeResponse(validatedData);
+  
+      return res.status(200).json({
+        success: true,
+        analysis,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
