@@ -1,35 +1,33 @@
 "use client";
 
-type AuthType =
-  | "No Auth"
-  | "Bearer Token"
-  | "Basic Auth"
-  | "API Key";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-  type AuthorizationEditorProps = {
-    authType: AuthType;
-    onAuthTypeChange: (type: AuthType) => void;
-  
-    bearerToken: string;
-    onBearerTokenChange: (token: string) => void;
+type AuthType = "No Auth" | "Bearer Token" | "Basic Auth" | "API Key";
 
-    basicUsername: string;
-    onBasicUsernameChange: (value: string) => void;
-
-    basicPassword: string;
-    onBasicPasswordChange: (value: string) => void;
-
-    apiKeyName: string;
-    onApiKeyNameChange: (value: string) => void;
-
-    apiKeyValue: string;
-    onApiKeyValueChange: (value: string) => void;
-
-    apiKeyLocation: "Header" | "Query";
-    onApiKeyLocationChange: (
-    value: "Header" | "Query"
-    ) => void;
-  };
+type AuthorizationEditorProps = {
+  authType: AuthType;
+  onAuthTypeChange: (type: AuthType) => void;
+  bearerToken: string;
+  onBearerTokenChange: (token: string) => void;
+  basicUsername: string;
+  onBasicUsernameChange: (value: string) => void;
+  basicPassword: string;
+  onBasicPasswordChange: (value: string) => void;
+  apiKeyName: string;
+  onApiKeyNameChange: (value: string) => void;
+  apiKeyValue: string;
+  onApiKeyValueChange: (value: string) => void;
+  apiKeyLocation: "Header" | "Query";
+  onApiKeyLocationChange: (value: "Header" | "Query") => void;
+};
 
 const authTypes: AuthType[] = [
   "No Auth",
@@ -39,161 +37,125 @@ const authTypes: AuthType[] = [
 ];
 
 export default function AuthorizationEditor({
-    authType,
-    onAuthTypeChange,
-  
-    bearerToken,
-    onBearerTokenChange,
-  
-    basicUsername,
-    onBasicUsernameChange,
-  
-    basicPassword,
-    onBasicPasswordChange,
-
-    apiKeyName,
-    onApiKeyNameChange,
-
-    apiKeyValue,
-    onApiKeyValueChange,
-
-    apiKeyLocation,
-    onApiKeyLocationChange,
+  authType,
+  onAuthTypeChange,
+  bearerToken,
+  onBearerTokenChange,
+  basicUsername,
+  onBasicUsernameChange,
+  basicPassword,
+  onBasicPasswordChange,
+  apiKeyName,
+  onApiKeyNameChange,
+  apiKeyValue,
+  onApiKeyValueChange,
+  apiKeyLocation,
+  onApiKeyLocationChange,
 }: AuthorizationEditorProps) {
   return (
-    <div className="mt-6">
-      <h3 className="mb-3 font-medium">Authorization</h3>
+    <div className="space-y-4">
+      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        Authorization
+      </h3>
 
       <div className="space-y-2">
-        <label className="text-sm text-zinc-400">
-          Authentication Type
-        </label>
-
-        <select
+        <Label>Authentication Type</Label>
+        <Select
           value={authType}
-          onChange={(e) =>
-            onAuthTypeChange(e.target.value as AuthType)
+          onValueChange={(value) =>
+            onAuthTypeChange((value as AuthType) ?? authType)
           }
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none"
         >
-          {authTypes.map((type) => (
-            <option
-              key={type}
-              value={type}
-            >
-              {type}
-            </option>
-          ))}
-        </select>
-        {authType === "Bearer Token" && (
-  <div className="mt-4 space-y-2">
-    <label className="text-sm text-zinc-400">
-      Token
-    </label>
-
-    <input
-      type="text"
-      value={bearerToken}
-      onChange={(e) =>
-        onBearerTokenChange(e.target.value)
-      }
-      placeholder="Enter Bearer Token"
-      className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none"
-    />
-  </div>
-)}
-    {authType === "Basic Auth" && (
-    <div className="mt-4 space-y-4">
-        <div className="space-y-2">
-        <label className="text-sm text-zinc-400">
-            Username
-        </label>
-
-        <input
-            type="text"
-            value={basicUsername}
-            onChange={(e) =>
-            onBasicUsernameChange(e.target.value)
-            }
-            placeholder="Enter Username"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none"
-        />
-        </div>
-
-        <div className="space-y-2">
-        <label className="text-sm text-zinc-400">
-            Password
-        </label>
-
-        <input
-            type="password"
-            value={basicPassword}
-            onChange={(e) =>
-            onBasicPasswordChange(e.target.value)
-            }
-            placeholder="Enter Password"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none"
-        />
-        </div>
-    </div>
-    )}
-
-{authType === "API Key" && (
-  <div className="mt-4 space-y-4">
-    <div className="space-y-2">
-      <label className="text-sm text-zinc-400">
-        Location
-      </label>
-
-      <select
-        value={apiKeyLocation}
-        onChange={(e) =>
-          onApiKeyLocationChange(
-            e.target.value as "Header" | "Query"
-          )
-        }
-        className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none"
-      >
-        <option value="Header">Header</option>
-        <option value="Query">Query</option>
-      </select>
-    </div>
-
-    <div className="space-y-2">
-      <label className="text-sm text-zinc-400">
-        Key
-      </label>
-
-      <input
-        type="text"
-        value={apiKeyName}
-        onChange={(e) =>
-          onApiKeyNameChange(e.target.value)
-        }
-        placeholder="e.g. x-api-key"
-        className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none"
-      />
-    </div>
-
-    <div className="space-y-2">
-      <label className="text-sm text-zinc-400">
-        Value
-      </label>
-
-      <input
-        type="text"
-        value={apiKeyValue}
-        onChange={(e) =>
-          onApiKeyValueChange(e.target.value)
-        }
-        placeholder="Enter API Key"
-        className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 outline-none"
-      />
-    </div>
-  </div>
-)}
-
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {authTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {authType === "Bearer Token" && (
+        <div className="space-y-2">
+          <Label htmlFor="bearer-token">Token</Label>
+          <Input
+            id="bearer-token"
+            value={bearerToken}
+            onChange={(e) => onBearerTokenChange(e.target.value)}
+            placeholder="Enter Bearer Token"
+          />
+        </div>
+      )}
+
+      {authType === "Basic Auth" && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="basic-username">Username</Label>
+            <Input
+              id="basic-username"
+              value={basicUsername}
+              onChange={(e) => onBasicUsernameChange(e.target.value)}
+              placeholder="Enter Username"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="basic-password">Password</Label>
+            <Input
+              id="basic-password"
+              type="password"
+              value={basicPassword}
+              onChange={(e) => onBasicPasswordChange(e.target.value)}
+              placeholder="Enter Password"
+            />
+          </div>
+        </div>
+      )}
+
+      {authType === "API Key" && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Location</Label>
+            <Select
+              value={apiKeyLocation}
+              onValueChange={(value) =>
+                onApiKeyLocationChange(
+                  (value as "Header" | "Query") ?? apiKeyLocation
+                )
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Header">Header</SelectItem>
+                <SelectItem value="Query">Query</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="api-key-name">Key</Label>
+            <Input
+              id="api-key-name"
+              value={apiKeyName}
+              onChange={(e) => onApiKeyNameChange(e.target.value)}
+              placeholder="e.g. x-api-key"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="api-key-value">Value</Label>
+            <Input
+              id="api-key-value"
+              value={apiKeyValue}
+              onChange={(e) => onApiKeyValueChange(e.target.value)}
+              placeholder="Enter API Key"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

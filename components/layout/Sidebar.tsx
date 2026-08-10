@@ -1,43 +1,57 @@
+"use client";
+
 import {
-    Home,
-    FolderKanban,
-    History,
-    Settings,
-  } from "lucide-react";
-  
-  export default function Sidebar() {
-    return (
-      <aside className="w-72 border-r border-zinc-800 bg-zinc-950 p-4">
-        <nav className="space-y-2">
-          <SidebarItem icon={<Home size={18} />} title="Workspace" />
+  FolderKanban,
+  History,
+  Home,
+  Settings,
+  Sparkles,
+} from "lucide-react";
+
+import SidebarItem from "./SidebarItem";
+
+type SidebarProps = {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+};
+
+const navItems = [
+  { id: "workspace", icon: Home, title: "Workspace", description: "Build & test" },
+  { id: "collections", icon: FolderKanban, title: "Collections", description: "Organize APIs" },
+  { id: "history", icon: History, title: "History", description: "Past requests" },
+] as const;
+
+export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
+  return (
+    <aside className="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
+      <div className="border-b border-sidebar-border px-4 py-4">
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <Sparkles className="size-3.5" />
+          Navigation
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-0.5 p-3">
+        {navItems.map(({ id, icon: Icon, title, description }) => (
           <SidebarItem
-            icon={<FolderKanban size={18} />}
-            title="Collections"
+            key={id}
+            icon={<Icon className="size-4" />}
+            title={title}
+            description={description}
+            active={activeTab === id}
+            onClick={() => onTabChange(id)}
           />
-          <SidebarItem
-            icon={<History size={18} />}
-            title="History"
-          />
-          <SidebarItem
-            icon={<Settings size={18} />}
-            title="Settings"
-          />
-        </nav>
-      </aside>
-    );
-  }
-  
-  function SidebarItem({
-    icon,
-    title,
-  }: {
-    icon: React.ReactNode;
-    title: string;
-  }) {
-    return (
-      <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-white">
-        {icon}
-        <span>{title}</span>
-      </button>
-    );
-  }
+        ))}
+      </nav>
+
+      <div className="border-t border-sidebar-border p-3">
+        <SidebarItem
+          icon={<Settings className="size-4" />}
+          title="Settings"
+          active={activeTab === "settings"}
+          onClick={() => onTabChange("settings")}
+        />
+      </div>
+    </aside>
+  );
+}

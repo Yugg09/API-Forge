@@ -1,27 +1,40 @@
 "use client";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 type RequestTabsProps = {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  children: React.ReactNode;
 };
 
-const tabs = ["Headers", "Params", "Path", "Body", "Auth"];
+const tabs = ["Headers", "Params", "Path", "Body", "Auth"] as const;
 
 export default function RequestTabs({
   activeTab,
   onTabChange,
+  children,
 }: RequestTabsProps) {
   return (
-    <div className="mt-6 flex gap-6 border-b border-zinc-800 pb-3">
-      {tabs.map((tab) => (
-        <button
-          key={tab}
-          onClick={() => onTabChange(tab)}
-          className={activeTab === tab ? "text-blue-500" : ""}
-        >
-          {tab}
-        </button>
-      ))}
-    </div>
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) => onTabChange(value ?? activeTab)}
+      className="flex flex-1 flex-col overflow-hidden"
+    >
+      <TabsList variant="line" className="h-auto w-full shrink-0 justify-start gap-0 bg-transparent px-0">
+        {tabs.map((tab) => (
+          <TabsTrigger
+            key={tab}
+            value={tab}
+            className="rounded-none px-4 py-2.5 text-xs data-active:font-semibold"
+          >
+            {tab}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <div className="scrollbar-thin flex-1 overflow-auto pt-4">{children}</div>
+    </Tabs>
   );
 }
+
+export { TabsContent };

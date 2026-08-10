@@ -1,22 +1,21 @@
 "use client";
 
+import { Textarea } from "@/components/ui/textarea";
+
 type BodyEditorProps = {
   body: string;
   onBodyChange: (value: string) => void;
 };
 
-export default function BodyEditor({
-  body,
-  onBodyChange,
-}: BodyEditorProps) {
+export default function BodyEditor({ body, onBodyChange }: BodyEditorProps) {
   return (
-    <textarea
+    <Textarea
       value={body}
       onChange={(e) => onBodyChange(e.target.value)}
       placeholder={`{
-  "name": "Yug"
+  "name": "example"
 }`}
-      className="mt-4 h-64 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-4 font-mono outline-none"
+      className="min-h-56 font-mono text-sm leading-relaxed"
     />
   );
 }

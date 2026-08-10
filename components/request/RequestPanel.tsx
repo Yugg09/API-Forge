@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Send } from "lucide-react";
 
+import PanelHeader from "@/components/layout/PanelHeader";
 import BodyEditor from "../request-builder/BodyEditor";
 import HeaderEditor from "../request-builder/HeaderEditor";
-import RequestTabs from "../request-builder/RequestTabs";
+import RequestTabs, { TabsContent } from "../request-builder/RequestTabs";
 import RequestToolbar from "../request-builder/RequestToolbar";
 import QueryEditor from "../request-builder/QueryEditor";
 import PathVariableEditor from "../request-builder/PathVariableEditor";
@@ -36,11 +38,15 @@ type AuthType =
   | "API Key";
 
 type RequestPanelProps = {
-  setResponse: React.Dispatch<React.SetStateAction<string>>;
-  setStatus: React.Dispatch<React.SetStateAction<number>>;
-  setTime: React.Dispatch<React.SetStateAction<number>>;
-  setSize: React.Dispatch<React.SetStateAction<number>>;
-};
+    setResponse: React.Dispatch<React.SetStateAction<any>>;
+    setStatus: React.Dispatch<React.SetStateAction<any>>;
+    setTime: React.Dispatch<React.SetStateAction<any>>;
+    setSize: React.Dispatch<React.SetStateAction<any>>;
+  
+    setMethod: React.Dispatch<React.SetStateAction<string>>;
+    setUrl: React.Dispatch<React.SetStateAction<string>>;
+    setRequestBody: React.Dispatch<React.SetStateAction<string>>;
+  };
 
 const INITIAL_HEADER: Header = {
   key: "",
@@ -62,6 +68,10 @@ export default function RequestPanel({
   setStatus,
   setTime,
   setSize,
+
+  setMethod: setSelectedMethod,
+  setUrl: setSelectedUrl,
+  setRequestBody,
 }: RequestPanelProps) {
   // Request State
   const [url, setUrl] = useState("");
@@ -158,6 +168,7 @@ const [apiKeyLocation, setApiKeyLocation] = useState<
   // UI State
   const [activeTab, setActiveTab] =
     useState("Headers");
+  const [loading, setLoading] = useState(false);
 
   function updateHeader(
     index: number,
@@ -207,26 +218,27 @@ const [apiKeyLocation, setApiKeyLocation] = useState<
 
   async function sendRequest() {
     if (!validateBody()) return;
-
+  
     if (authType === "Bearer Token" && !bearerToken.trim()) {
       setResponse("Bearer token is required.");
       return;
-  }
+    }
 
-  const finalHeaders: HeadersInit = {
-    ...buildHeaders(headers, method),
+    setLoading(true);
   
-    ...buildAuthorization({
-      authType,
-      bearerToken,
-      basicUsername,
-      basicPassword,
-      apiKeyLocation,
-      apiKeyName,
-      apiKeyValue,
-    }),
-  };
-
+    const finalHeaders = {
+      ...buildHeaders(headers, method),
+      ...buildAuthorization({
+        authType,
+        bearerToken,
+        basicUsername,
+        basicPassword,
+        apiKeyLocation,
+        apiKeyName,
+        apiKeyValue,
+      }),
+    };
+  
     const finalQueryParams = buildQueryParams(
       queryParams,
       authType,
@@ -234,125 +246,158 @@ const [apiKeyLocation, setApiKeyLocation] = useState<
       apiKeyName,
       apiKeyValue
     );
-
-    const queryString = finalQueryParams.toString();
-
-    const pathUrl = buildPathUrl(
-      url,
-      pathVariables
-    );
-
-    const finalUrl = queryString
-      ? `${pathUrl}?${queryString}`
-      : pathUrl;
-
+  
+    const pathUrl = buildPathUrl(url, pathVariables);
+    setSelectedMethod(method);
+    setSelectedUrl(pathUrl);
+    setRequestBody(body);
     try {
+      const saveResponse = await fetch(
+        "http://localhost:8000/api/requests",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            name: "Untitled Request",
+            method,
+            url: pathUrl,
+            headers: Object.fromEntries(
+              Object.entries(finalHeaders).filter(
+                ([, value]) => value !== undefined
+              )
+            ),
+            queryParams: Object.fromEntries(finalQueryParams),
+            body,
+          }),
+        }
+      );
+    
+      const saved = await saveResponse.json();
+    
+      if (!saved.success) {
+        setResponse(saved.message || "Request save failed");
+        return;
+      }
+      
+      // ================= EXECUTE REQUEST =================
+      
       const startTime = performance.now();
-
-      console.log("Final URL:", finalUrl);
-      const res = await fetch(finalUrl, {
+      
+      const response = await fetch(pathUrl, {
         method,
         headers: finalHeaders,
-        body: method === "GET" ? undefined : body,
+        body:
+          method === "GET" || method === "DELETE"
+            ? undefined
+            : body || undefined,
       });
-
+      
       const endTime = performance.now();
-
-      const data = await res.json();
-      const formattedData = JSON.stringify(
-        data,
-        null,
-        2
-      );
-
-      setResponse(formattedData);
-      setStatus(res.status);
-      setTime(
-        Math.round(endTime - startTime)
-      );
-      setSize(
-        new Blob([formattedData]).size
-      );
-    } catch (error) {
+      
+      const text = await response.text();
+      
+      setResponse(text);
+      
+      setStatus(response.status);
+      
+      setTime(Math.round(endTime - startTime));
+      
+      setSize(new Blob([text]).size);
+    
+    } 
+     catch (error) {
       console.error(error);
-      setResponse("Request Failed");
+  
+      setResponse(
+        error instanceof Error
+          ? error.message
+          : "Request Failed"
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
+  
   return (
-    <div className="border-r border-zinc-800 p-5">
-      <h2 className="mb-4 text-xl font-semibold">
-        Request Builder
-      </h2>
-
-      <RequestToolbar
-        method={method}
-        url={url}
-        onMethodChange={setMethod}
-        onUrlChange={setUrl}
-        onSend={sendRequest}
+    <div className="panel-surface border-r border-border">
+      <PanelHeader
+        title="Request Builder"
+        description="Configure and send HTTP requests"
+        icon={<Send className="size-4" />}
       />
 
-      <RequestTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      {activeTab === "Body" && (
-        <BodyEditor
-          body={body}
-          onBodyChange={setBody}
+      <div className="flex flex-1 flex-col overflow-hidden p-5">
+        <RequestToolbar
+          method={method}
+          url={url}
+          loading={loading}
+          onMethodChange={setMethod}
+          onUrlChange={setUrl}
+          onSend={sendRequest}
         />
-      )}
 
-      {activeTab === "Headers" && (
-        <HeaderEditor
-          headers={headers}
-          onHeaderChange={updateHeader}
-          onAddHeader={addHeader}
-          onRemoveHeader={removeHeader}
-        />
-    )}
-      {activeTab === "Params" && (
-      <QueryEditor
-        queryParams={queryParams}
-        onQueryParamChange={updateQueryParam}
-        onAddQueryParam={addQueryParam}
-        onRemoveQueryParam={removeQueryParam}
-      />
-    )}
-      {activeTab === "Path" && (
-    <PathVariableEditor
-      pathVariables={pathVariables}
-      onPathVariableChange={updatePathVariable}
-      onAddPathVariable={addPathVariable}
-      onRemovePathVariable={removePathVariable}
-    />
-  )}
-      {activeTab === "Auth" && (
-  <AuthorizationEditor
-    authType={authType}
-    onAuthTypeChange={setAuthType}
+        <RequestTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        >
+          <TabsContent value="Body">
+            <BodyEditor
+              body={body}
+              onBodyChange={setBody}
+            />
+          </TabsContent>
 
-    bearerToken={bearerToken}
-    onBearerTokenChange={setBearerToken}
+          <TabsContent value="Headers">
+            <HeaderEditor
+              headers={headers}
+              onHeaderChange={updateHeader}
+              onAddHeader={addHeader}
+              onRemoveHeader={removeHeader}
+            />
+          </TabsContent>
 
-    basicUsername={basicUsername}
-    onBasicUsernameChange={setBasicUsername}
+          <TabsContent value="Params">
+            <QueryEditor
+              queryParams={queryParams}
+              onQueryParamChange={updateQueryParam}
+              onAddQueryParam={addQueryParam}
+              onRemoveQueryParam={removeQueryParam}
+            />
+          </TabsContent>
 
-    basicPassword={basicPassword}
-    onBasicPasswordChange={setBasicPassword}
+          <TabsContent value="Path">
+            <PathVariableEditor
+              pathVariables={pathVariables}
+              onPathVariableChange={updatePathVariable}
+              onAddPathVariable={addPathVariable}
+              onRemovePathVariable={removePathVariable}
+            />
+          </TabsContent>
 
-    apiKeyName={apiKeyName}
-    onApiKeyNameChange={setApiKeyName}
-
-    apiKeyValue={apiKeyValue}
-    onApiKeyValueChange={setApiKeyValue}
-
-    apiKeyLocation={apiKeyLocation}
-    onApiKeyLocationChange={setApiKeyLocation}
-  />
-)}
+          <TabsContent value="Auth">
+            <AuthorizationEditor
+              authType={authType}
+              onAuthTypeChange={setAuthType}
+              bearerToken={bearerToken}
+              onBearerTokenChange={setBearerToken}
+              basicUsername={basicUsername}
+              onBasicUsernameChange={setBasicUsername}
+              basicPassword={basicPassword}
+              onBasicPasswordChange={setBasicPassword}
+              apiKeyName={apiKeyName}
+              onApiKeyNameChange={setApiKeyName}
+              apiKeyValue={apiKeyValue}
+              onApiKeyValueChange={setApiKeyValue}
+              apiKeyLocation={apiKeyLocation}
+              onApiKeyLocationChange={setApiKeyLocation}
+            />
+          </TabsContent>
+        </RequestTabs>
+      </div>
     </div>
   );
 }
