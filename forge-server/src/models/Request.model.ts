@@ -1,17 +1,16 @@
 import mongoose, { Schema } from "mongoose";
 
-export interface IRequest{
+export interface IRequest {
   name: string;
   method: string;
   url: string;
   headers: Record<string, string>;
   queryParams: Record<string, string>;
   body: string;
-  collection: mongoose.Types.ObjectId;
   user: mongoose.Types.ObjectId;
 }
 
-const requestSchema = new Schema<IRequest>(
+const requestSchema = new Schema(
   {
     name: {
       type: String,
@@ -44,12 +43,6 @@ const requestSchema = new Schema<IRequest>(
     body: {
       type: String,
       default: "",
-    },
-
-    collection: {
-      type: Schema.Types.ObjectId,
-      ref: "Collection",
-      required: true,
     },
 
     user: {

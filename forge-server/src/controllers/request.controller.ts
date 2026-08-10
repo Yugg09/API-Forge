@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
 import {
   createRequest,
+  getAllRequests,
   getRequests,
   updateRequest,
   deleteRequest,
 } from "../services/request.service";
+
+import { Request as RequestModel } from "../models/Request.model";
 
 export async function create(req: Request, res: Response) {
   try {
@@ -15,7 +18,6 @@ export async function create(req: Request, res: Response) {
       headers: req.body.headers || {},
       queryParams: req.body.queryParams || {},
       body: req.body.body || "",
-      collectionId: req.body.collectionId,
       userId: (req as any).user._id.toString(),
     });
 
@@ -34,10 +36,10 @@ export async function create(req: Request, res: Response) {
   }
 }
 
+
 export async function getAll(req: Request, res: Response) {
   try {
-    const requests = await getRequests(
-      req.params.collectionId as string,
+    const requests = await getAllRequests(
       (req as any).user._id.toString()
     );
 
@@ -100,3 +102,4 @@ export async function remove(req: Request, res: Response) {
     });
   }
 }
+

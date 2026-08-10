@@ -7,33 +7,25 @@ type CreateRequestInput = {
   headers: Record<string, string>;
   queryParams: Record<string, string>;
   body: string;
-  collectionId: string;
   userId: string;
 };
 
 export async function createRequest(
   data: CreateRequestInput
 ) {
-  const request = await Request.create({
+  return await Request.create({
     name: data.name,
     method: data.method,
     url: data.url,
     headers: data.headers,
     queryParams: data.queryParams,
     body: data.body,
-    collection: data.collectionId,
     user: data.userId,
   });
-
-  return request;
 }
 
-export async function getRequests(
-  collectionId: string,
-  userId: string
-) {
-  return Request.find({
-    collection: collectionId,
+export async function getRequests(userId: string) {
+  return await Request.find({
     user: userId,
   }).sort({
     createdAt: -1,
@@ -77,4 +69,10 @@ export async function deleteRequest(
   }
 
   return request;
+}
+
+export async function getAllRequests(userId: string) {
+  return Request.find({ user: userId }).sort({
+    createdAt: -1,
+  });
 }

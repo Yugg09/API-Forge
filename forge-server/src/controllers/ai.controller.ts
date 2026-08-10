@@ -4,14 +4,8 @@ import {
   testGemini,
   explainAPI as explainAPIService,
   generateTestCases,
-    analyzeResponse,
+  analyzeResponse,
 } from "../services/ai.service";
-
-import {
-  explainAPISchema,
-  generateTestsSchema,
-    analyzeResponseSchema,
-} from "../validators/ai.validator";
 
 export async function testAI(req: Request, res: Response) {
   try {
@@ -31,9 +25,7 @@ export async function testAI(req: Request, res: Response) {
 
 export async function explainAPI(req: Request, res: Response) {
   try {
-    const validatedData = explainAPISchema.parse(req.body);
-
-    const explanation = await explainAPIService(validatedData);
+    const explanation = await explainAPIService(req.body);
 
     return res.status(200).json({
       success: true,
@@ -49,9 +41,7 @@ export async function explainAPI(req: Request, res: Response) {
 
 export async function generateTests(req: Request, res: Response) {
   try {
-    const validatedData = generateTestsSchema.parse(req.body);
-
-    const tests = await generateTestCases(validatedData);
+    const tests = await generateTestCases(req.body);
 
     return res.status(200).json({
       success: true,
@@ -66,24 +56,20 @@ export async function generateTests(req: Request, res: Response) {
 }
 
 export async function analyzeAPIResponse(
-    req: Request,
-    res: Response
-  ) {
-    try {
-      const validatedData =
-        analyzeResponseSchema.parse(req.body);
-  
-      const analysis =
-        await analyzeResponse(validatedData);
-  
-      return res.status(200).json({
-        success: true,
-        analysis,
-      });
-    } catch (error: any) {
-      return res.status(500).json({
-        success: false,
-        message: error.message,
-      });
-    }
+  req: Request,
+  res: Response
+) {
+  try {
+    const analysis = await analyzeResponse(req.body);
+
+    return res.status(200).json({
+      success: true,
+      analysis,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
+}

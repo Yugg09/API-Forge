@@ -1,9 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import {
-  ExplainAPIInput,
-  GenerateTestsInput,
-  AnalyzeResponseInput
-} from "../validators/ai.validator";
+
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
@@ -18,7 +14,7 @@ export async function testGemini() {
   return result.text;
 }
 
-export async function explainAPI(data: ExplainAPIInput) {
+export async function explainAPI(data: any) {
   const prompt = `
 Explain this API.
 
@@ -56,7 +52,7 @@ Include:
   return result.text;
 }
 
-export async function generateTestCases(data: GenerateTestsInput) {
+export async function generateTestCases(data: any) {
   const prompt = `
 Generate professional API test cases.
 
@@ -86,7 +82,7 @@ Return in markdown.
 }
 
 export async function analyzeResponse(
-    data: AnalyzeResponseInput
+    data: any
   ) {
     const prompt = `
   You are a Senior Backend Engineer.
